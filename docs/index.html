@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>panelmed — causal mediation analysis for panel data</title>
+<meta name="description" content="panelmed: a Python package for causal mediation analysis in panel data with double/debiased machine learning (DML-GMM), implementing Wu and Xiao (2026).">
+<meta name="author" content="Dr Merwan Roudane">
+<meta property="og:title" content="panelmed">
+<meta property="og:description" content="Direct, indirect and total effects in panel data with two-way fixed effects and double/debiased machine learning.">
+<meta property="og:image" content="https://merwanroudane.github.io/panelmed/assets/counties_profile.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="#top">panelmed</a>
+    <nav class="nav">
+      <a href="#install">Install</a><a href="#theory">Theory</a><a href="#api">API</a>
+      <a href="#example">Example</a><a href="#reading">Outputs</a><a href="#references">References</a>
+      <a href="https://github.com/merwanroudane/panelmed">GitHub</a>
+      <a href="https://pypi.org/project/panelmed/">PyPI</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero" id="top">
+  <div class="wrap">
+    <div class="pills"><span class="pill">v0.1.0</span><span class="pill">MIT licence</span><span class="pill">Python ≥ 3.9</span></div>
+    <h1>panelmed</h1>
+    <p class="pitch">Causal mediation analysis for panel data with double/debiased machine learning: direct, indirect and total effects under two-way fixed effects.</p>
+    <p class="cite">Implements Wu, P. and Xiao, Z. (2026), “Causal Mediation Analysis for Panel Data with Double/Debiased Machine Learning”, <a href="https://doi.org/10.48550/arXiv.2610.21339">arXiv:2610.21339</a>.</p>
+    <div class="install"><code id="pipcmd">pip install panelmed</code><button class="copy" data-copy="pip install panelmed">Copy</button></div>
+    <div class="btns">
+      <a class="btn" href="https://github.com/merwanroudane/panelmed">GitHub</a>
+      <a class="btn" href="https://pypi.org/project/panelmed/">PyPI</a>
+      <a class="btn ghost" href="https://doi.org/10.48550/arXiv.2610.21339">Read the paper</a>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+
+<section id="what">
+  <span class="eyebrow e-indigo">Overview</span>
+  <h2>What it does</h2>
+  <p>A treatment often changes an outcome through an intermediate variable. Employment raises local income partly because it raises wages. <strong>panelmed</strong> splits the total effect into the part that goes through the mediator and the part that does not, using repeated observations of the same units to remove any time-invariant confounder.</p>
+  <div class="grid">
+    <div class="card"><h3>Estimator</h3><p>DML-GMM for the outcome and mediator equations, with cross-fitting and an auxiliary fold that removes period effects.</p></div>
+    <div class="card teal"><h3>Effects and inference</h3><p>Controlled direct, natural direct, natural indirect and total effects, in levels and as derivatives, with analytical and bootstrap standard errors.</p></div>
+    <div class="card amber"><h3>Tables and figures</h3><p>Text, LaTeX, Markdown and HTML tables; decomposition, profile, dose-response, surface and diagnostic figures.</p></div>
+    <div class="card sky"><h3>Data included</h3><p>The U.S. county panel of the paper's application (3,058 counties, 2000–2019) and the paper's Monte Carlo generator.</p></div>
+  </div>
+</section>
+
+<section id="install">
+  <span class="eyebrow e-indigo">Setup</span>
+  <h2>Installation</h2>
+  <pre><code class="language-bash">pip install panelmed</code></pre>
+  <p>With interactive 3-D surfaces:</p>
+  <pre><code class="language-bash">pip install "panelmed[plotly]"</code></pre>
+  <p>Requirements: Python 3.9 or later, with numpy, scipy, pandas, matplotlib, scikit-learn and joblib (installed automatically).</p>
+  <div class="note"><p><strong>Never used Python?</strong> Install <a href="https://www.anaconda.com/download">Anaconda</a>, open “Anaconda Prompt”, and type the command above. The <a href="https://github.com/merwanroudane/panelmed#2-start-from-absolutely-nothing">README has a step-by-step guide from zero</a>.</p></div>
+</section>
+
+<section id="theory">
+  <span class="eyebrow e-teal">Method</span>
+  <h2>Theory</h2>
+  <div class="card teal theory">
+    <h3>The model</h3>
+    <p>For unit \(i = 1,\dots,N\) and period \(t = 1,\dots,T\), with outcome \(Y_{it}\), mediator \(M_{it}\), treatment \(D_{it}\) and covariates \(X_{it}\):</p>
+    $$Y_{it} = \tau_Y(D_{i,t-L:t}, M_{i,t-L:t}, X_{i,t-L:t})'\theta_0 + f_0(X_{i,t-L:t}) + \alpha_i^Y + \lambda_t^Y + \varepsilon_{it}^Y$$
+    $$M_{it} = \tau_M(D_{i,t-L:t}, X_{i,t-L:t})'\gamma_0 + g_0(X_{i,t-L:t}) + \alpha_i^M + \lambda_t^M + \varepsilon_{it}^M$$
+    <p>\(\tau_Y\) and \(\tau_M\) are <em>dictionaries</em> chosen by the researcher (current and lagged treatment, squares, interactions). \(f_0\) and \(g_0\) are unknown, possibly nonlinear functions of the covariates. \(\alpha_i\) are unit effects and \(\lambda_t\) period effects. The treatment may be binary, multivalued or continuous; the mediator is continuous.</p>
+
+    <h3>The effects</h3>
+    <p>For two treatment histories \(\bar d_t\) and \(\bar d_t^{*}\), with \(\bar M_{it}(\cdot)\) the mediator history a unit would have under a given treatment history:</p>
+    $$\mathrm{NDE}_t = E\big[Y_{it}(\bar d_t, \bar M_{it}(\bar d_t^{*})) - Y_{it}(\bar d_t^{*}, \bar M_{it}(\bar d_t^{*}))\big]$$
+    $$\mathrm{NIE}_t = E\big[Y_{it}(\bar d_t, \bar M_{it}(\bar d_t)) - Y_{it}(\bar d_t, \bar M_{it}(\bar d_t^{*}))\big]$$
+    $$\mathrm{TE}_t = \mathrm{NDE}_t + \mathrm{NIE}_t$$
+    <p>The controlled direct effect fixes the mediator history at a chosen value. For continuous treatments the same objects exist as derivatives with respect to one period's treatment (NDD, NID, TD).</p>
+
+    <h3>Assumptions</h3>
+    <ul>
+      <li>No interference between units, no anticipation, consistency (Assumptions 1–3).</li>
+      <li><strong>Sequential conditional independence</strong> given the observed history and the unit effects (Assumption 4). Any time-invariant confounder is allowed.</li>
+      <li>Units are independent; within a unit, any serial dependence is allowed. \(N \to \infty\) with \(T \ge 3\) fixed.</li>
+    </ul>
+
+    <h3>The estimator</h3>
+    <p>First differences remove \(\alpha_i\). Units are split into \(K\) folds. For the fold \(k\) where the score is evaluated, a second fold \(k'\) supplies cross-sectional means and the remaining folds train the nuisance functions. Period effects are removed by</p>
+    $$D_k Q_{it} = (Q_{it} - Q_{i,t-1}) - \frac{1}{|F_{k'}|}\sum_{j \in F_{k'}} (Q_{jt} - Q_{j,t-1}).$$
+    <p>With residuals \(U^Y_{it}(\theta)\), \(U^M_{it}(\gamma)\) and \(U^D_{it}\), the moments use <em>lagged</em> residuals as instruments, because under sequential exogeneity contemporaneous ones are invalid after differencing:</p>
+    $$\psi^Y_{it} = A^Y_{it}\,U^Y_{it}(\theta), \qquad A^Y_{it} = \big(U^D_{i2},\dots,U^D_{i,t-1},\,U^M_{i2}(\tilde\gamma),\dots,U^M_{i,t-1}(\tilde\gamma)\big)'$$
+    $$\psi^M_{it} = A^M_{it}\,U^M_{it}(\gamma), \qquad A^M_{it} = \big(U^D_{i2},\dots,U^D_{i,t-1}\big)'$$
+    <p>\(\tilde\gamma\) is a preliminary copy of \(\gamma\) learned outside the evaluation fold, which keeps the score linear in the parameters. The two equations are stacked and solved by GMM in closed form. The score is Neyman orthogonal in every nuisance component.</p>
+
+    <h3>Inference</h3>
+    <p>The stacked estimator is asymptotically normal with a sandwich covariance. Each effect \(\vartheta\) is an average of unit contributions \(\ell(W_i;\beta)\), with influence function</p>
+    $$\varphi_{\vartheta,i} = \ell(W_i;\beta_0) - \vartheta_0 + J_\vartheta\,\varphi_{\beta,i},$$
+    <p>which keeps both the sampling variation of the unit contributions and the estimation error of the coefficients. The covariance of effects that add up exactly is singular; Wald tests use a generalised inverse.</p>
+  </div>
+
+  <h3>Step → equation map</h3>
+  <p>Every block of code is tied to a numbered equation of the paper. The full map is in <a href="https://github.com/merwanroudane/panelmed/blob/main/docs/methods.md">docs/methods.md</a>.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Code</th><th>Paper</th><th>What it computes</th></tr></thead>
+    <tbody>
+      <tr><td><code>Dictionary</code>, <code>make_env</code></td><td>Section 2.3</td><td>\(\tau_Y\), \(\tau_M\) at observed or counterfactual histories</td></tr>
+      <tr><td><code>polynomial_basis</code></td><td>App. D.1, E.1</td><td>monomial library for \(f_0, g_0, h_0\)</td></tr>
+      <tr><td><code>_diff</code></td><td>Eq. (7)</td><td>first differences</td></tr>
+      <tr><td>fold loop in <code>fit_once</code></td><td>Algorithm 1, steps 1–2</td><td>evaluation, auxiliary and training folds</td></tr>
+      <tr><td><code>_first_stage</code>, <code>_lasso</code></td><td>App. D.1</td><td>l1-penalised IV fit with \(\lambda = \sqrt{2\log(2p)/n}\)</td></tr>
+      <tr><td><code>star(...)</code></td><td>Eq. (8)</td><td>auxiliary-fold demeaning</td></tr>
+      <tr><td>instrument loop</td><td>Algorithm 1, step 3</td><td>\(A^Y_{it}\), \(A^M_{it}\) from lagged residuals</td></tr>
+      <tr><td><code>solve</code></td><td>Eq. (12)</td><td>closed-form stacked GMM</td></tr>
+      <tr><td><code>V = A Psi A'</code></td><td>Eq. (A.15)</td><td>sandwich covariance</td></tr>
+      <tr><td><code>Counterfactual.nested</code></td><td>Eqs. (13), (14), (17)</td><td>counterfactual mediator and outcome</td></tr>
+      <tr><td><code>effect_inference</code></td><td>Eqs. (18)–(21)</td><td>effects and their influence functions</td></tr>
+      <tr><td><code>bootstrap</code></td><td>Section 4</td><td>cross-sectional bootstrap of the whole procedure</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Check against the paper</h3>
+  <p>Monte Carlo design of the paper's Table 1 (\(N = 1600\), \(T = 10\)); 300 replications here, 1,000 in the paper.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Estimand</th><th class="num">Bias</th><th class="num">SD</th><th class="num">Coverage</th><th class="num">Paper: bias</th><th class="num">Paper: SD</th><th class="num">Paper: coverage</th></tr></thead>
+    <tbody>
+      <tr><td>\(\theta_{D_t}\)</td><td class="num">-0.0026</td><td class="num">0.0283</td><td class="num">0.947</td><td class="num">-0.0019</td><td class="num">0.0274</td><td class="num">0.951</td></tr>
+      <tr><td>\(\gamma_{D_t}\)</td><td class="num">-0.0083</td><td class="num">0.0342</td><td class="num">0.970</td><td class="num">-0.0093</td><td class="num">0.0342</td><td class="num">0.955</td></tr>
+      <tr><td>NDE</td><td class="num">0.0041</td><td class="num">0.0746</td><td class="num">0.930</td><td class="num">0.0015</td><td class="num">0.0731</td><td class="num">0.950</td></tr>
+      <tr><td>NIE</td><td class="num">-0.0274</td><td class="num">0.0985</td><td class="num">0.943</td><td class="num">-0.0274</td><td class="num">0.0993</td><td class="num">0.944</td></tr>
+      <tr><td>TE</td><td class="num">-0.0233</td><td class="num">0.1044</td><td class="num">0.977</td><td class="num">-0.0259</td><td class="num">0.1053</td><td class="num">0.947</td></tr>
+      <tr><td>Naive-GMM, \(\gamma_{D_t}\)</td><td class="num">-0.2004</td><td class="num">0.0265</td><td class="num">0.000</td><td class="num">-0.1770</td><td class="num">0.0271</td><td class="num">0.000</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="api">
+  <span class="eyebrow e-indigo">Reference</span>
+  <h2>API and syntax</h2>
+
+  <div class="card">
+    <h3><code>PanelMediation(y, m, d, x=None, *, outcome, mediator, ...)</code></h3>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Argument</th><th>Default</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>y, m, d</code></td><td>required</td><td>outcome, mediator, treatment: column names with <code>data</code>, or <code>(N, T)</code> arrays</td></tr>
+        <tr><td><code>x</code></td><td><code>None</code></td><td>covariates: list of column names or <code>(N, T, K)</code> array</td></tr>
+        <tr><td><code>outcome</code></td><td>required</td><td>outcome dictionary \(\tau_Y\) (Section 2.3)</td></tr>
+        <tr><td><code>mediator</code></td><td>required</td><td>mediator dictionary \(\tau_M\) (Section 2.3)</td></tr>
+        <tr><td><code>data, unit, time</code></td><td><code>None</code></td><td>long-format balanced panel and its identifier columns</td></tr>
+        <tr><td><code>basis_degree</code></td><td><code>3</code></td><td>degree of the polynomial library (App. D.1)</td></tr>
+        <tr><td><code>basis_max_vars</code></td><td><code>None</code></td><td>at most this many distinct covariates per monomial (App. E.1)</td></tr>
+        <tr><td><code>iv_interact</code></td><td><code>"auto"</code></td><td>covariates interacted with the lagged treatment residual in the instruments</td></tr>
+        <tr><td><code>iv_square</code></td><td><code>"auto"</code></td><td>add the squared lagged treatment residual as an instrument</td></tr>
+      </tbody>
+    </table></div>
+    <p>Dictionary terms are expressions in <code>d</code>, <code>m</code>, the covariate names and the lag prefix <code>L1_</code>, <code>L2_</code>, …: <code>"d"</code>, <code>"d**2"</code>, <code>"L1_d"</code>, <code>"d*x3"</code>, <code>"m"</code>, <code>"L1_m"</code>, <code>"d*m"</code>.</p>
+  </div>
+
+  <div class="card">
+    <h3><code>model.fit(n_folds=5, max_lags=2, penalty="plugin", method="dml", weighting="identity", seed=None)</code></h3>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Argument</th><th>Default</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>n_folds</code></td><td><code>5</code></td><td>number of folds \(K \ge 3\) (Algorithm 1)</td></tr>
+        <tr><td><code>max_lags</code></td><td><code>2</code></td><td>residual dates kept in each instrument vector; <code>None</code> = full history</td></tr>
+        <tr><td><code>penalty</code></td><td><code>"plugin"</code></td><td>first-stage l1 penalty: plug-in rule, <code>"cv"</code>, or a number</td></tr>
+        <tr><td><code>method</code></td><td><code>"dml"</code></td><td><code>"naive"</code> gives the benchmark of Section 5.1</td></tr>
+        <tr><td><code>weighting</code></td><td><code>"identity"</code></td><td><code>"optimal"</code> = two-step GMM with the J test</td></tr>
+        <tr><td><code>seed</code></td><td><code>None</code></td><td>seed of the random fold split</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="card teal">
+    <h3>Results</h3>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Call</th><th>Returns</th></tr></thead>
+      <tbody>
+        <tr><td><code>res.params, res.bse, res.pvalues, res.cov</code></td><td>coefficients, standard errors (Eq. A.15), p-values, covariance</td></tr>
+        <tr><td><code>res.summary()</code>, <code>.to_latex()</code>, <code>.to_markdown()</code>, <code>.to_frame()</code></td><td>the coefficient table in four formats</td></tr>
+        <tr><td><code>res.effects(d=1, d_star=0, m=0, period="last")</code></td><td>CDE, NDE, NIE, TE and the mediated share</td></tr>
+        <tr><td><code>res.derivatives(d=1, m=0, period="last")</code></td><td>CDD, NDD, NID, TD and the mediated share</td></tr>
+        <tr><td><code>res.bootstrap(n_boot=199, seed=None, n_jobs=1)</code></td><td>bootstrap draws; then use <code>se="bootstrap"</code></td></tr>
+        <tr><td><code>eff.wald(rows)</code></td><td>joint Wald test of several effects</td></tr>
+        <tr><td><code>compare_effects(eff_a, eff_b)</code></td><td>paired difference between two specifications</td></tr>
+        <tr><td><code>res.plot_coefficients()</code>, <code>res.plot_moments()</code>, <code>res.plot_dose_response()</code>, <code>res.plot_surface()</code>, <code>eff.plot()</code>, <code>eff.plot_profile()</code></td><td>figures, each returning <code>(fig, ax)</code></td></tr>
+      </tbody>
+    </table></div>
+    <p><code>period</code> accepts <code>"last"</code>, a period number, a list, <code>"all"</code> (one row per period) or <code>"average"</code> (Eq. 24).</p>
+  </div>
+</section>
+
+<section id="example">
+  <span class="eyebrow e-teal">Application</span>
+  <h2>Complete example with real data</h2>
+  <p>The application of the paper (Section 6): 3,058 U.S. counties, 2001–2019. Treatment: workplace employment rate. Outcome: log personal income per capita. Mediator: log average wage per job. Eight lagged county characteristics are the covariates. All variables are winsorised and standardised, so effects are in standard deviations.</p>
+
+  <h3>Step 1 — load the data</h3>
+  <pre><code class="language-python">from panelmed import PanelMediation, compare_effects, load_us_counties
+from panelmed.datasets import US_COUNTIES_COVARIATES as X
+
+df = load_us_counties()          # 3,058 counties x 19 years, prepared as in the paper</code></pre>
+
+  <h3>Step 2 — two specifications</h3>
+  <pre><code class="language-python">common = dict(data=df, unit="county_id", time="year", basis_degree=3, basis_max_vars=2)
+
+# I: the same effect in every county
+spec1 = PanelMediation("y", "m", "d", X, outcome=["d", "m"], mediator=["d"], **common)
+res1 = spec1.fit(n_folds=5, max_lags=2, seed=2026)
+
+# II: effects vary with county characteristics
+inter = [f"d*{c}" for c in X]
+spec2 = PanelMediation("y", "m", "d", X, outcome=["d", "m"] + inter,
+                       mediator=["d"] + inter, **common)
+res2 = spec2.fit(n_folds=5, max_lags=2, seed=2026)</code></pre>
+  <p>Specification I uses 99 moment conditions for 3 parameters and Specification II 627 for 19, the same counts as in the paper.</p>
+
+  <h3>Step 3 — effects averaged over 2001–2019</h3>
+  <pre><code class="language-python">eff1 = res1.derivatives(d=0, period="average")
+eff2 = res2.derivatives(d=0, period="average")
+print(eff1.summary())
+print(eff2.summary())</code></pre>
+
+  <div class="two">
+    <div class="tablewrap"><table>
+      <caption>Specification I</caption>
+      <thead><tr><th>Estimand</th><th class="num">Coef.</th><th class="num">Std.Err.</th><th class="num">95% CI</th></tr></thead>
+      <tbody>
+        <tr><td>NDD (direct)</td><td class="num">0.2089**</td><td class="num">0.0875</td><td class="num">[0.0375, 0.3803]</td></tr>
+        <tr><td>NID (through wages)</td><td class="num">0.3997***</td><td class="num">0.0703</td><td class="num">[0.2620, 0.5375]</td></tr>
+        <tr><td>TD (total)</td><td class="num">0.6086***</td><td class="num">0.0786</td><td class="num">[0.4546, 0.7626]</td></tr>
+        <tr class="sect"><td colspan="4">Mediated share</td></tr>
+        <tr><td>NID / TD</td><td class="num">0.6568</td><td class="num">0.1199</td><td class="num">[0.4218, 0.8918]</td></tr>
+      </tbody>
+    </table></div>
+    <div class="tablewrap"><table>
+      <caption>Specification II</caption>
+      <thead><tr><th>Estimand</th><th class="num">Coef.</th><th class="num">Std.Err.</th><th class="num">95% CI</th></tr></thead>
+      <tbody>
+        <tr><td>NDD (direct)</td><td class="num">0.3657***</td><td class="num">0.1177</td><td class="num">[0.1350, 0.5964]</td></tr>
+        <tr><td>NID (through wages)</td><td class="num">0.2482***</td><td class="num">0.0478</td><td class="num">[0.1545, 0.3419]</td></tr>
+        <tr><td>TD (total)</td><td class="num">0.6139***</td><td class="num">0.1051</td><td class="num">[0.4080, 0.8198]</td></tr>
+        <tr class="sect"><td colspan="4">Mediated share</td></tr>
+        <tr><td>NID / TD</td><td class="num">0.4043</td><td class="num">0.1068</td><td class="num">[0.1949, 0.6137]</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <p>*** p&lt;0.01, ** p&lt;0.05. Analytical standard errors from influence functions (Eq. 21).</p>
+
+  <div class="tablewrap"><table>
+    <caption>Against Table 2 of the paper</caption>
+    <thead><tr><th></th><th class="num">NDD</th><th class="num">NID</th><th class="num">TD</th><th class="num">NID/TD</th></tr></thead>
+    <tbody>
+      <tr><td>Specification I, paper</td><td class="num">0.2145</td><td class="num">0.4017</td><td class="num">0.6162</td><td class="num">0.6519</td></tr>
+      <tr><td>Specification I, panelmed</td><td class="num">0.2089</td><td class="num">0.3997</td><td class="num">0.6086</td><td class="num">0.6568</td></tr>
+      <tr><td>Specification II, paper</td><td class="num">0.3597</td><td class="num">0.2502</td><td class="num">0.6099</td><td class="num">0.4103</td></tr>
+      <tr><td>Specification II, panelmed</td><td class="num">0.3657</td><td class="num">0.2482</td><td class="num">0.6139</td><td class="num">0.4043</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note"><p>The remaining differences come from the random fold split, which the paper does not publish. The paper reports bootstrap standard errors; these are available with <code>res.bootstrap(...)</code>.</p></div>
+
+  <h3>Step 4 — does the decomposition change?</h3>
+  <pre><code class="language-python">print(compare_effects(eff1, eff2))</code></pre>
+  <div class="tablewrap"><table>
+    <caption>Paired difference, Specification II minus Specification I</caption>
+    <thead><tr><th>Estimand</th><th class="num">Difference</th><th class="num">Std.Err.</th><th class="num">P&gt;|z|</th><th class="num">95% CI</th></tr></thead>
+    <tbody>
+      <tr><td>NDD</td><td class="num">0.1568**</td><td class="num">0.0762</td><td class="num">0.040</td><td class="num">[0.0074, 0.3062]</td></tr>
+      <tr><td>NID</td><td class="num">-0.1515***</td><td class="num">0.0510</td><td class="num">0.003</td><td class="num">[-0.2515, -0.0516]</td></tr>
+      <tr><td>TD</td><td class="num">0.0053</td><td class="num">0.0698</td><td class="num">0.940</td><td class="num">[-0.1315, 0.1421]</td></tr>
+      <tr><td>NID / TD</td><td class="num">-0.2525***</td><td class="num">0.0813</td><td class="num">0.002</td><td class="num">[-0.4119, -0.0931]</td></tr>
+    </tbody>
+  </table></div>
+  <p>The total effect is the same in both specifications. The share going through wages falls from about two thirds to about 40%.</p>
+
+  <h3>Step 5 — figures</h3>
+  <pre><code class="language-python">eff2.plot()
+res2.derivatives(d=0, period="all").plot_profile()
+res2.plot_dose_response()
+res2.plot_surface()
+res1.plot_moments()</code></pre>
+  <div class="figs">
+    <figure><a href="assets/counties_decomposition.png"><img src="assets/counties_decomposition.png" alt="Dot-and-whisker plot of the direct, indirect and total effects under Specification II"></a><figcaption>Decomposition under Specification II, 95% intervals.</figcaption></figure>
+    <figure><a href="assets/counties_profile.png"><img src="assets/counties_profile.png" alt="Year-by-year direct, indirect and total effects with confidence bands, 2001 to 2019"></a><figcaption>Year-by-year effects: mildly U-shaped, as in Figure A.1 of the paper.</figcaption></figure>
+    <figure><a href="assets/counties_dose_response.png"><img src="assets/counties_dose_response.png" alt="Direct, indirect and total effects as a function of the treatment value"></a><figcaption>Dose-response of the three effects.</figcaption></figure>
+    <figure><a href="assets/counties_surface.png"><img src="assets/counties_surface.png" alt="Heatmap of the total effect over pairs of treatment histories"></a><figcaption>Total effect for every pair \((d, d^{*})\), Parula colours.</figcaption></figure>
+    <figure><a href="assets/counties_coefficients.png"><img src="assets/counties_coefficients.png" alt="Structural coefficients of Specification I with confidence intervals"></a><figcaption>Structural coefficients, Specification I.</figcaption></figure>
+    <figure><a href="assets/counties_moments.png"><img src="assets/counties_moments.png" alt="Bar chart of standardised sample moments"></a><figcaption>Moment diagnostic, Specification I.</figcaption></figure>
+  </div>
+</section>
+
+<section id="reading">
+  <span class="eyebrow e-teal">Outputs</span>
+  <h2>Interpreting the output</h2>
+  <div class="two">
+    <div class="card teal">
+      <h3>The tables</h3>
+      <ul>
+        <li><strong>theta[m]</strong>: effect of the mediator on the outcome. <strong>gamma[d]</strong>: effect of the treatment on the mediator. Their product drives the indirect effect.</li>
+        <li><strong>NDE / NDD</strong>: effect of the treatment with the mediator kept at the value it would have had without the change.</li>
+        <li><strong>NIE / NID</strong>: effect that comes only from the mediator responding to the treatment.</li>
+        <li><strong>TE / TD</strong>: always the sum of the two.</li>
+        <li><strong>Mediated share</strong>: indirect over total. No test against zero is reported for it.</li>
+        <li><strong>Stars</strong>: p-values below 0.01, 0.05, 0.10.</li>
+      </ul>
+    </div>
+    <div class="card teal">
+      <h3>The figures</h3>
+      <ul>
+        <li><strong>Profile</strong>: with constant coefficients, movement over time reflects changes in the covariates that interact with the treatment.</li>
+        <li><strong>Surface</strong>: the white line marks pairs of histories with zero effect.</li>
+        <li><strong>Moment diagnostic</strong>: bars are standardised sample moments; many bars far outside ±1.96 point to a misspecified dictionary or invalid instruments.</li>
+        <li><strong>Jacobian condition number</strong> (table footer): values above about 1,000 signal weak identification.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="warn"><p><strong>Pitfall.</strong> A stable total effect does not validate its split. Always report the decomposition under more than one dictionary, and check a second <code>seed</code>.</p></div>
+</section>
+
+<section id="beyond">
+  <span class="eyebrow e-amber">Extensions</span>
+  <h2>Beyond the paper</h2>
+  <p>These are additions to the original method.</p>
+  <div class="grid">
+    <div class="card amber"><h3>Two-step GMM and J test</h3><p><code>weighting="optimal"</code> gives efficient GMM and the test of over-identifying restrictions of Hansen (1982).</p></div>
+    <div class="card amber"><h3>Mediated share SE</h3><p>An analytical standard error for indirect/total by the delta method on the influence functions (follows from Theorem 2).</p></div>
+    <div class="card amber"><h3>Paired comparison</h3><p><code>compare_effects</code> tests whether two specifications differ, from unit-level influence functions or from paired bootstrap draws.</p></div>
+    <div class="card amber"><h3>Identification check</h3><p>The condition number of the moment Jacobian is reported, and a clear error is raised when the rank condition fails.</p></div>
+  </div>
+  <div class="note"><p><strong>Not implemented in 0.1.0:</strong> vector-valued mediators (Appendix A.1 of the paper) and unbalanced panels.</p></div>
+</section>
+
+<section id="references">
+  <span class="eyebrow e-sky">Sources</span>
+  <h2>References</h2>
+  <ol>
+    <li>Wu, P. and Xiao, Z. (2026). Causal Mediation Analysis for Panel Data with Double/Debiased Machine Learning. arXiv:2610.21339. <a href="https://doi.org/10.48550/arXiv.2610.21339">doi:10.48550/arXiv.2610.21339</a></li>
+    <li>Wu, P. and Xiao, Z. (2026). Double/Debiased Machine Learning for Treatment Effects in Dynamic Panels. <em>Journal of the American Statistical Association</em>. <a href="https://doi.org/10.1080/01621459.2026.2696607">doi:10.1080/01621459.2026.2696607</a></li>
+    <li>Chernozhukov, V., Chetverikov, D., Demirer, M., Duflo, E., Hansen, C., Newey, W. and Robins, J. (2018). Double/debiased machine learning for treatment and structural parameters. <em>The Econometrics Journal</em>, 21(1), C1–C68. <a href="https://doi.org/10.1111/ectj.12097">doi:10.1111/ectj.12097</a></li>
+    <li>Kapetanios, G. (2008). A bootstrap procedure for panel data sets with many cross-sectional units. <em>The Econometrics Journal</em>, 11(2), 377–395. <a href="https://doi.org/10.1111/j.1368-423X.2008.00243.x">doi:10.1111/j.1368-423X.2008.00243.x</a></li>
+    <li>Hansen, L. P. (1982). Large sample properties of generalized method of moments estimators. <em>Econometrica</em>, 50(4), 1029–1054. <a href="https://doi.org/10.2307/1912775">doi:10.2307/1912775</a></li>
+    <li>Cerqua, A., Letta, M. and Pinto, G. (2026). On the (mis)use of machine learning with panel data. <em>Oxford Bulletin of Economics and Statistics</em>, 88(3), 506–518. <a href="https://doi.org/10.1111/obes.70019">doi:10.1111/obes.70019</a></li>
+  </ol>
+</section>
+
+<section id="author">
+  <span class="eyebrow e-indigo">Author</span>
+  <h2>Author and citation</h2>
+  <div class="author">
+    <div class="card">
+      <h3>Dr Merwan Roudane</h3>
+      <ul class="links">
+        <li>Email: <a href="mailto:merwanroudane920@gmail.com">merwanroudane920@gmail.com</a></li>
+        <li>GitHub: <a href="https://github.com/merwanroudane">github.com/merwanroudane</a></li>
+        <li>Repository: <a href="https://github.com/merwanroudane/panelmed">merwanroudane/panelmed</a></li>
+        <li>PyPI: <a href="https://pypi.org/project/panelmed/">pypi.org/project/panelmed</a></li>
+        <li>Paper: <a href="https://doi.org/10.48550/arXiv.2610.21339">arXiv:2610.21339</a></li>
+      </ul>
+      <h3>Other packages (CRAN)</h3>
+      <ul class="links">
+        <li><a href="https://cran.r-project.org/package=QuantileOnQuantile">QuantileOnQuantile</a></li>
+        <li><a href="https://cran.r-project.org/package=mqqr">mqqr</a></li>
+        <li><a href="https://cran.r-project.org/package=qqkrls">qqkrls</a></li>
+        <li><a href="https://cran.r-project.org/package=mqqcause">mqqcause</a></li>
+      </ul>
+    </div>
+    <div class="card sky">
+      <h3>Cite this package</h3>
+      <pre><button class="copy" data-copy-target="bib">Copy</button><code id="bib" class="language-bibtex">@software{roudane_panelmed,
+  author  = {Roudane, Merwan},
+  title   = {{panelmed}: causal mediation analysis
+             for panel data with double/debiased
+             machine learning},
+  year    = {2026},
+  url     = {https://github.com/merwanroudane/panelmed},
+  version = {0.1.0}
+}</code></pre>
+      <p>Please also cite Wu and Xiao (2026), and Cerqua, Letta and Pinto (2026) when you use the county data.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">© 2026 Dr Merwan Roudane · MIT Licence · panelmed 0.1.0 · last updated 10 November 2026</div>
+</footer>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  if (window.renderMathInElement) {
+    renderMathInElement(document.body, {delimiters: [
+      {left: "$$", right: "$$", display: true}, {left: "\\(", right: "\\)", display: false}]});
+  }
+  if (window.hljs) { hljs.highlightAll(); }
+  document.querySelectorAll("pre").forEach(function (pre) {
+    if (pre.querySelector(".copy")) { return; }
+    var b = document.createElement("button");
+    b.className = "copy"; b.textContent = "Copy";
+    b.dataset.copyText = pre.innerText;
+    pre.appendChild(b);
+  });
+  document.querySelectorAll(".copy").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var text = b.dataset.copy || b.dataset.copyText ||
+        (b.dataset.copyTarget ? document.getElementById(b.dataset.copyTarget).innerText : "");
+      navigator.clipboard.writeText(text).then(function () {
+        var old = b.textContent; b.textContent = "Copied";
+        setTimeout(function () { b.textContent = old; }, 1400);
+      });
+    });
+  });
+});
+</script>
+</body>
+</html>

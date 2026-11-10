@@ -38,7 +38,7 @@ def plot_coefficients(res, level: float = 0.95, ax=None):
     fr = res.to_frame(level)
     with plt.rc_context(JOURNAL_RC):
         fig, ax = (ax.figure, ax) if ax is not None else plt.subplots(
-            figsize=(6.5, 0.38 * len(fr) + 1.4))
+            layout="constrained", figsize=(6.5, 0.38 * len(fr) + 1.4))
         pos = np.arange(len(fr))[::-1]
         for k, (lab, row) in enumerate(fr.iterrows()):
             col = "#1f4e9c" if k < res.sY else "#c0392b"
@@ -71,7 +71,7 @@ def plot_moments(res, ax=None):
     z = np.sqrt(N) * psi.mean(axis=0) / np.where(sd > 0, sd, 1.0)
     ny = res.n_moments_y
     with plt.rc_context(JOURNAL_RC):
-        fig, ax = (ax.figure, ax) if ax is not None else plt.subplots()
+        fig, ax = (ax.figure, ax) if ax is not None else plt.subplots(layout="constrained")
         idx = np.arange(z.size)
         ax.bar(idx[:ny], z[:ny], color="#1f4e9c", width=0.9, label="Outcome moments")
         ax.bar(idx[ny:], z[ny:], color="#c0392b", width=0.9, hatch="//", edgecolor="white",
@@ -94,7 +94,7 @@ def plot_effects(eff, ax=None):
     fr = eff.frame[~eff.frame["kind"].str.contains("/")]
     with plt.rc_context(JOURNAL_RC):
         fig, ax = (ax.figure, ax) if ax is not None else plt.subplots(
-            figsize=(6.5, 0.42 * len(fr) + 1.4))
+            layout="constrained", figsize=(6.5, 0.42 * len(fr) + 1.4))
         pos = np.arange(len(fr))[::-1]
         for k, (lab, row) in enumerate(fr.iterrows()):
             col, mk, _ = STYLE[ROLE[row["kind"]]]
@@ -118,7 +118,7 @@ def plot_profile(eff, kinds: Optional[Sequence[str]] = None, ax=None):
         raise ValueError("Build the effects with period='all' (or a list) to plot a profile.")
     kinds = list(kinds) if kinds is not None else [k for k in eff.kinds if ROLE[k] != "controlled"]
     with plt.rc_context(JOURNAL_RC):
-        fig, ax = (ax.figure, ax) if ax is not None else plt.subplots()
+        fig, ax = (ax.figure, ax) if ax is not None else plt.subplots(layout="constrained")
         for k in kinds:
             sub = fr[fr["kind"] == k]
             col, mk, ls = STYLE[ROLE[k]]
@@ -153,7 +153,7 @@ def plot_dose_response(res, grid=None, d_star: float = 0.0, m: float = 0.0,
         for k in rows:
             rows[k].append(fr.loc[k, ["estimate", "ci_low", "ci_high"]].to_numpy(float))
     with plt.rc_context(JOURNAL_RC):
-        fig, ax = (ax.figure, ax) if ax is not None else plt.subplots()
+        fig, ax = (ax.figure, ax) if ax is not None else plt.subplots(layout="constrained")
         for k, vals in rows.items():
             v = np.array(vals)
             col, mk, ls = STYLE[ROLE[k]]
@@ -213,7 +213,7 @@ def plot_surface(res, grid=None, kind: str = "TE", m: float = 0.0, period="last"
         return fig
     plt = _plt()
     with plt.rc_context(JOURNAL_RC):
-        fig, ax = (ax.figure, ax) if ax is not None else plt.subplots(figsize=(5.6, 4.4))
+        fig, ax = (ax.figure, ax) if ax is not None else plt.subplots(layout="constrained", figsize=(5.6, 4.4))
         im = ax.pcolormesh(grid, grid, Z, cmap=get_cmap(colorscale), shading="auto")
         cs = ax.contour(grid, grid, Z, levels=[0.0], colors="white", linewidths=1.2)
         ax.clabel(cs, fmt="0", fontsize=8)

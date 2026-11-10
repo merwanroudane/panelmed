@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- Figures use a constrained layout, so long axis labels are no longer clipped
+  when a figure is saved without `bbox_inches="tight"`.
+- Year labels on the period-profile figure no longer overlap.
+- Long parameter names are printed in full in the text tables.
+
+### Added
+- Documentation site under `docs/`.
+
 ## [0.1.0] - 2026-11-09
 
 ### Added
