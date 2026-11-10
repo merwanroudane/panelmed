@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+title: "panelmed: causal mediation analysis for panel data with double/debiased machine learning"
+message: "If you use this software, please cite it and the original paper."
+authors:
+  - family-names: Roudane
+    given-names: Merwan
+    email: merwanroudane920@gmail.com
+version: 0.1.0
+date-released: "2026-11-09"
+url: "https://github.com/merwanroudane/panelmed"
+license: MIT
+references:
+  - type: article
+    authors:
+      - family-names: Wu
+        given-names: Peikai
+      - family-names: Xiao
+        given-names: Zhiguo
+    title: "Causal Mediation Analysis for Panel Data with Double/Debiased Machine Learning"
+    journal: "arXiv preprint arXiv:2610.21339"
+    year: 2026
+    doi: "10.48550/arXiv.2610.21339"
