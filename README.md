@@ -1,4 +1,10 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/merwanroudane/panelmed/main/docs/assets/banner.png" alt="panelmed: causal mediation analysis for panel data, developed by Dr Merwan Roudane" width="100%">
+</p>
+
 # panelmed
+
+**Developed by [Dr Merwan Roudane](https://github.com/merwanroudane)**
 
 [![PyPI](https://img.shields.io/pypi/v/panelmed.svg)](https://pypi.org/project/panelmed/)
 [![Python](https://img.shields.io/pypi/pyversions/panelmed.svg)](https://pypi.org/project/panelmed/)
