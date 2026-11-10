@@ -31,7 +31,7 @@
 
 <div class="hero" id="top">
   <div class="wrap">
-    <div class="pills"><span class="pill">v0.1.0</span><span class="pill">MIT licence</span><span class="pill">Python ≥ 3.9</span></div>
+    <div class="pills"><span class="pill">v0.1.1</span><span class="pill">MIT licence</span><span class="pill">Python ≥ 3.10</span></div>
     <h1>panelmed</h1>
     <p class="pitch">Causal mediation analysis for panel data with double/debiased machine learning: direct, indirect and total effects under two-way fixed effects.</p>
     <p class="cite">Implements Wu, P. and Xiao, Z. (2026), “Causal Mediation Analysis for Panel Data with Double/Debiased Machine Learning”, <a href="https://doi.org/10.48550/arXiv.2610.21339">arXiv:2610.21339</a>.</p>
@@ -64,7 +64,7 @@
   <pre><code class="language-bash">pip install panelmed</code></pre>
   <p>With interactive 3-D surfaces:</p>
   <pre><code class="language-bash">pip install "panelmed[plotly]"</code></pre>
-  <p>Requirements: Python 3.9 or later, with numpy, scipy, pandas, matplotlib, scikit-learn and joblib (installed automatically).</p>
+  <p>Requirements: Python 3.10 or later, with numpy, scipy, pandas, matplotlib, scikit-learn and joblib (installed automatically).</p>
   <div class="note"><p><strong>Never used Python?</strong> Install <a href="https://www.anaconda.com/download">Anaconda</a>, open “Anaconda Prompt”, and type the command above. The <a href="https://github.com/merwanroudane/panelmed#2-start-from-absolutely-nothing">README has a step-by-step guide from zero</a>.</p></div>
 </section>
 
@@ -335,7 +335,7 @@ res1.plot_moments()</code></pre>
     <div class="card amber"><h3>Paired comparison</h3><p><code>compare_effects</code> tests whether two specifications differ, from unit-level influence functions or from paired bootstrap draws.</p></div>
     <div class="card amber"><h3>Identification check</h3><p>The condition number of the moment Jacobian is reported, and a clear error is raised when the rank condition fails.</p></div>
   </div>
-  <div class="note"><p><strong>Not implemented in 0.1.0:</strong> vector-valued mediators (Appendix A.1 of the paper) and unbalanced panels.</p></div>
+  <div class="note"><p><strong>Not implemented yet:</strong> vector-valued mediators (Appendix A.1 of the paper) and unbalanced panels.</p></div>
 </section>
 
 <section id="references">
@@ -381,7 +381,7 @@ res1.plot_moments()</code></pre>
              machine learning},
   year    = {2026},
   url     = {https://github.com/merwanroudane/panelmed},
-  version = {0.1.0}
+  version = {0.1.1}
 }</code></pre>
       <p>Please also cite Wu and Xiao (2026), and Cerqua, Letta and Pinto (2026) when you use the county data.</p>
     </div>
@@ -391,7 +391,7 @@ res1.plot_moments()</code></pre>
 </main>
 
 <footer>
-  <div class="wrap">© 2026 Dr Merwan Roudane · MIT Licence · panelmed 0.1.0 · last updated 10 November 2026</div>
+  <div class="wrap">© 2026 Dr Merwan Roudane · MIT Licence · panelmed 0.1.1 · last updated 10 November 2026</div>
 </footer>
 
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>

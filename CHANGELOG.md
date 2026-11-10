@@ -1,12 +1,15 @@
 # Changelog
 
-## [Unreleased]
+## [0.1.1] - 2026-11-10
 
 ### Fixed
 - Figures use a constrained layout, so long axis labels are no longer clipped
   when a figure is saved without `bbox_inches="tight"`.
 - Year labels on the period-profile figure no longer overlap.
 - Long parameter names are printed in full in the text tables.
+
+### Changed
+- Python 3.10 or later is required; the test matrix covers 3.10, 3.12 and 3.13.
 
 ### Added
 - Documentation site under `docs/`.

@@ -28,6 +28,6 @@ __all__ = [
 try:
     __version__ = _v("panelmed")
 except PackageNotFoundError:  # running from a source tree that is not installed
-    __version__ = "0.1.0"
+    __version__ = "0.1.1"
 __author__ = "Dr Merwan Roudane"
 __email__ = "merwanroudane920@gmail.com"

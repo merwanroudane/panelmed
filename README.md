@@ -121,7 +121,7 @@ Development version:
 ```bash
 pip install git+https://github.com/merwanroudane/panelmed.git
 ```
-Requirements: Python >= 3.9, numpy, scipy, pandas, matplotlib, scikit-learn, joblib
+Requirements: Python >= 3.10, numpy, scipy, pandas, matplotlib, scikit-learn, joblib
 (installed automatically).
 
 ## 4. Your first analysis in 60 seconds
@@ -744,7 +744,7 @@ and coverage 0.000 (paper: 0.8230 and 0.000), and the total effect has coverage 
   title   = {{panelmed}: causal mediation analysis for panel data with double/debiased machine learning},
   year    = {2026},
   url     = {https://github.com/merwanroudane/panelmed},
-  version = {0.1.0}
+  version = {0.1.1}
 }
 ```
 Please also cite the original paper: Wu, P. and Xiao, Z. (2026), "Causal Mediation

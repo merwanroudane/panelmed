@@ -4,10 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name            = "panelmed"
-version         = "0.1.0"
+version         = "0.1.1"
 description     = "Causal mediation analysis for panel data with double/debiased machine learning (DML-GMM)"
 readme          = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license         = { text = "MIT" }
 authors         = [{ name = "Merwan Roudane", email = "merwanroudane920@gmail.com" }]
 maintainers     = [{ name = "Merwan Roudane", email = "merwanroudane920@gmail.com" }]
